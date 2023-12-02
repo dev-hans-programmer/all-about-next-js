@@ -1,6 +1,7 @@
 import { db } from '@/db';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import * as actions from '@/actions';
 
 interface Props {
    params: { id: string };
@@ -17,6 +18,9 @@ export default async function ShowSnippetPage({ params: { id } }: Props) {
    if (!record) return notFound();
 
    const { title, code } = record;
+
+   const deleteSnippetAction = actions.deleteSnippet.bind(null, +id);
+
    return (
       <div>
          <div className='flex m-4 justify-between items-center'>
@@ -28,7 +32,9 @@ export default async function ShowSnippetPage({ params: { id } }: Props) {
                >
                   Edit
                </Link>
-               <button className='p-2 border rounded'>Delete</button>
+               <form action={deleteSnippetAction}>
+                  <button className='p-2 border rounded'>Delete</button>
+               </form>
             </div>
          </div>
          <pre className='p-3 border rounded bg-gray-200 border-gray-200'>
