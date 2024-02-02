@@ -7,6 +7,7 @@ import { useAction } from '@/hooks/use-action';
 import { List } from '@prisma/client';
 import { ListWithCards } from '@/types';
 import { ListForm } from './list-form';
+import { ListItem } from './list-item';
 
 interface ListContainerProps {
   data: ListWithCards[];
@@ -24,9 +25,17 @@ function reorder<T>(list: T[], startIndex: number, endIndex: number) {
 export const ListContainer = ({ data, boardId }: ListContainerProps) => {
   const [orderedData, setOrderedData] = useState(data);
 
+  useEffect(() => {
+    setOrderedData(data);
+  }, [data]);
+
   return (
-    <div>
+    <ol className='flex gap-x-3 h-full'>
+      {orderedData.map((list, index) => (
+        <ListItem key={list.id} data={list} index={index} />
+      ))}
       <ListForm />
-    </div>
+      <div className='flex-shrink-0 w-1'></div>
+    </ol>
   );
 };
