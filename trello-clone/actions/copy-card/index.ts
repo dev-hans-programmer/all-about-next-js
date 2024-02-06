@@ -2,11 +2,10 @@
 
 import { auth } from '@clerk/nextjs';
 import { revalidatePath } from 'next/cache';
-
 import { db } from '@/lib/db';
 import { createSafeAction } from '@/lib/create-safe-action';
 
-import { createListSchema } from './schema';
+import { CopyCard } from './schema';
 import { InputType, ReturnType } from './types';
 import { ACTION, ENTITY_TYPE, createAuditLog } from '@/lib/create-audit-log';
 
@@ -19,53 +18,56 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     };
   }
 
-  const { title, boardId } = data;
-  let list;
+  const { id, boardId } = data;
+  let card;
 
   try {
-    const board = await db.board.findUnique({
+    const cardToCopy = await db.card.findUnique({
       where: {
-        id: boardId,
-        orgId,
+        id,
+        list: {
+          board: {
+            orgId,
+          },
+        },
       },
     });
 
-    if (!board) {
-      return {
-        error: 'Board not found',
-      };
+    if (!cardToCopy) {
+      return { error: 'Card not found' };
     }
 
-    const lastList = await db.list.findFirst({
-      where: { boardId: boardId },
+    const lastCard = await db.card.findFirst({
+      where: { listId: cardToCopy.listId },
       orderBy: { order: 'desc' },
       select: { order: true },
     });
 
-    const newOrder = lastList ? lastList.order + 1 : 1;
+    const newOrder = lastCard ? lastCard.order + 1 : 1;
 
-    list = await db.list.create({
+    card = await db.card.create({
       data: {
-        title,
-        boardId,
+        title: `${cardToCopy.title} - Copy`,
+        description: cardToCopy.description,
         order: newOrder,
+        listId: cardToCopy.listId,
       },
     });
 
     await createAuditLog({
-      entityTitle: list.title,
-      entityId: list.id,
-      entityType: ENTITY_TYPE.LIST,
+      entityTitle: card.title,
+      entityId: card.id,
+      entityType: ENTITY_TYPE.CARD,
       action: ACTION.CREATE,
     });
   } catch (error) {
     return {
-      error: 'Failed to create.',
+      error: 'Failed to copy.',
     };
   }
 
   revalidatePath(`/board/${boardId}`);
-  return { data: list };
+  return { data: card };
 };
 
-export const createList = createSafeAction(createListSchema, handler);
+export const copyCard = createSafeAction(CopyCard, handler);

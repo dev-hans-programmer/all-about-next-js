@@ -9,6 +9,7 @@ import { createSafeAction } from '@/lib/create-safe-action';
 
 import { createCardSchema } from './schema';
 import { InputType, ReturnType } from './types';
+import { ACTION, ENTITY_TYPE, createAuditLog } from '@/lib/create-audit-log';
 
 const handler = async (data: InputType): Promise<ReturnType> => {
   const { userId, orgId } = auth();
@@ -54,12 +55,12 @@ const handler = async (data: InputType): Promise<ReturnType> => {
       },
     });
 
-    // await createAuditLog({
-    //   entityId: card.id,
-    //   entityTitle: card.title,
-    //   entityType: ENTITY_TYPE.CARD,
-    //   action: ACTION.CREATE,
-    // });
+    await createAuditLog({
+      entityId: card.id,
+      entityTitle: card.title,
+      entityType: ENTITY_TYPE.CARD,
+      action: ACTION.CREATE,
+    });
   } catch (error) {
     return {
       error: 'Failed to create.',
